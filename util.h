@@ -1,0 +1,69 @@
+#pragma once
+
+void hook_fn(DWORD baseAddr, DWORD offset, LPVOID fnAddr) {
+	DWORD patchHookAddr = baseAddr + offset;
+	DWORD relativeFnHookAddr = (DWORD)((char*)fnAddr - (char*)(patchHookAddr + 1 + 4));
+	const char* patchInitStart = "\xE8";
+	WriteMemory((LPVOID)patchHookAddr, patchInitStart, 1);
+	BYTE bRelativeHookInitAddr[4];
+	memcpy(bRelativeHookInitAddr, &relativeFnHookAddr, 4);
+	WriteMemory((LPVOID)(patchHookAddr + 1), bRelativeHookInitAddr, 4);
+}
+
+template <typename I> std::string to_hex(I* bytes, int size, bool stop_at_null) {
+	static const char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B','C','D','E','F' };
+	std::string str;
+	for (int i = 0; i < size; ++i) {
+		const char ch = bytes[i];
+		if (stop_at_null && ch == 0) {
+			break;
+		}
+		str.append(&hex[(ch & 0xF0) >> 4], 1);
+		str.append(&hex[ch & 0xF], 1);
+		str.append("-");
+	}
+	return str;
+}
+
+template <typename I> std::string to_ascii(I* bytes, int size, bool stop_at_null) {
+	std::string str;
+	for (int i = 0; i < size; ++i) {
+		const char ch = bytes[i];
+		if (ch >= 32 && ch <= 127) {
+			str.append(&ch, 1);
+		}
+		else {
+			if (stop_at_null && ch == 0) {
+				break;
+			}
+			str.append(".");
+		}
+	}
+	return str;
+}
+
+template <typename I>void show(I* bytes, int size, bool stop_at_null) {
+	fprintf(stdout, "\n");
+	fprintf(stdout, "---------\n");
+	fprintf(stdout, "Size: %d\n", size);
+	fprintf(stdout, "%s\n", to_ascii(bytes, size, stop_at_null).c_str());
+	fprintf(stdout, "%s\n", to_hex(bytes, size, stop_at_null).c_str());
+	fprintf(stdout, "---------\n");
+	fprintf(stdout, "\n");
+}
+
+void write_file(char const* filename, BYTE* fileData, DWORD fileLen)
+{
+	std::ofstream ofile(filename, std::ios::binary);
+	ofile.write((char*)fileData, fileLen);
+}
+
+inline bool file_exists(std::wstring file_name) {
+	struct _stat file;
+	return _wstat(file_name.c_str(), &file) == 0;
+}
+
+inline bool file_exists(std::string file_name) {
+	struct _stat file;
+	return _stat(file_name.c_str(), &file) == 0;
+}
