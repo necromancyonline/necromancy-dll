@@ -42,6 +42,17 @@ template <typename I> std::string to_ascii(I* bytes, int size, bool stop_at_null
 	return str;
 }
 
+template <typename I> std::string read_msg(I* bytes, int len) {
+	std::string str;
+	int idx = 0;
+	while (idx < len) {
+		const char ch = bytes[idx];
+		str.append(&ch, 1);
+		idx+= 2;
+	}
+	return str;
+}
+
 template <typename I>void show(I* bytes, int size, bool stop_at_null) {
 	fprintf(stdout, "\n");
 	fprintf(stdout, "---------\n");
@@ -66,4 +77,20 @@ inline bool file_exists(std::wstring file_name) {
 inline bool file_exists(std::string file_name) {
 	struct _stat file;
 	return _stat(file_name.c_str(), &file) == 0;
+}
+
+std::wstring s_2_ws(const std::string& str)
+{
+	using convert_typeX = std::codecvt_utf8<wchar_t>;
+	std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+	return converterX.from_bytes(str);
+}
+
+std::string ws_2_s(const std::wstring& wstr)
+{
+	using convert_typeX = std::codecvt_utf8<wchar_t>;
+	std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+	return converterX.to_bytes(wstr);
 }

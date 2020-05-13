@@ -155,6 +155,7 @@
     <ClCompile Include="necromancy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ini.h" />
     <ClInclude Include="necromancy.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="util.h" />
