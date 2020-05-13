@@ -15,6 +15,7 @@ HMODULE base;
 DWORD base_addr;
 
 bool debug;
+bool recv_area_op_code;
 
 void dummy() {
 	MessageBox(NULL, L"dummy()", L"necromancy.dll", NULL);
@@ -128,7 +129,8 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 		fprintf(stdout, "base_addr: %u \n", base_addr);
 
 		// set default values
-		debug = false;
+		debug = true;
+		recv_area_op_code = true;
 
 		// load ini
 		CSimpleIniA ini;
@@ -136,11 +138,14 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 		if (ini.LoadFile("necromancy.ini") < 0) {
 			// create default ini
 			ini.SetBoolValue("necromancy", "debug", debug);
+			ini.SetBoolValue("necromancy", "recv_area_op_code", recv_area_op_code);
 			if (ini.SaveFile("necromancy.ini") < 0) {
 				// ini create error
 			}
 		}
+
 		debug = ini.GetBoolValue("necromancy", "debug", debug);
+		recv_area_op_code = ini.GetBoolValue("necromancy", "recv_area_op_code", recv_area_op_code);
 
 		// open console
 		if (TRUE == AllocConsole())
@@ -151,16 +156,18 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 			freopen_s(nfp + 2, "CONOUT$", "wb", stderr);
 			std::ios::sync_with_stdio();
 		}
-
+		
+		// print current settings
 		fprintf(stdout, "debug: %s \n", debug ? "true" : "false");
-
-		// Hook
-		hook_fn(base_addr, 0xA5B4F, hook_area_op);
-		hook_fn(base_addr, 0x8E606, hook_write_file_debug);
-
+		fprintf(stdout, "recv_area_op_code: %s \n", recv_area_op_code ? "true" : "false");
+		
 		if (debug) {
 			// Enable Debug (Shows FPS + Prints Debug String)
 			WriteMemory((LPVOID)(base_addr + 0x14D42), "\x3C\x01\x90\x90\x90\x90", 6);
+			hook_fn(base_addr, 0x8E606, hook_write_file_debug);
+		}
+		if (recv_area_op_code) {
+			hook_fn(base_addr, 0xA5B4F, hook_area_op);
 		}
 		break;
 	}
